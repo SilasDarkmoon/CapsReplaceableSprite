@@ -1,0 +1,19 @@
+{
+
+    "name": "cn.capstones.phsprite",
+
+    "displayName": "Capstone Replaceable Sprite",
+
+    "version": "0.0.1",
+
+    "unity": "2018.3",
+
+    "description": "Capstone Replaceable Sprite",
+
+    "keywords": [
+        "unity"
+    ],
+
+    "category": "Unity"
+
+}
