@@ -6,5 +6,7 @@ namespace Capstones.UnityEngineEx
 {
     public class CapsPHSpriteDesc : ScriptableObject
     {
+        [HideInInspector]
+        public string PHAssetMD5;
     }
 }

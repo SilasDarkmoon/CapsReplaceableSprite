@@ -13,7 +13,11 @@ namespace Capstones.UnityEditorEx
     {
         static CapsPHSpriteEditor()
         {
-            if (!LoadCachedSpriteReplacement())
+            if (LoadCachedSpriteReplacement())
+            {
+                CheckUpdatedPHSpriteSource();
+            }
+            else
             {
                 CacheAllSpriteReplacement();
             }
@@ -50,6 +54,7 @@ namespace Capstones.UnityEditorEx
                         _CachedSpriteReplacement[assetpath] = assetpath;
 
                         var desc = ScriptableObject.CreateInstance<CapsPHSpriteDesc>();
+                        desc.PHAssetMD5 = CapsEditorUtils.GetFileMD5(assetpath) + "-" + CapsEditorUtils.GetFileLength(assetpath);
                         AssetDatabase.CreateAsset(desc, assetpath + ".phs.asset");
                         PlatDependant.CopyFile(assetpath, source);
                         var meta = assetpath + ".meta";
@@ -126,9 +131,33 @@ namespace Capstones.UnityEditorEx
         internal readonly static Dictionary<string, string> _CachedSpriteReplacement = new Dictionary<string, string>();
         // norm -> place holder full path
         internal readonly static Dictionary<string, string> _CachedSpritePlaceHolder = new Dictionary<string, string>();
+        // place holder -> md5
+        private readonly static Dictionary<string, string> _CachedPlaceHolderMD5 = new Dictionary<string, string>();
 
         private static bool LoadCachedSpriteReplacement()
         {
+            // _CachedPlaceHolderMD5 is optional
+            _CachedPlaceHolderMD5.Clear();
+            if (PlatDependant.IsFileExist("EditorOutput/Runtime/phspritemd5.txt"))
+            {
+                string json = "";
+                using (var sr = PlatDependant.OpenReadText("EditorOutput/Runtime/phspritemd5.txt"))
+                {
+                    json = sr.ReadToEnd();
+                }
+                try
+                {
+                    var jo = new JSONObject(json);
+                    for (int i = 0; i < jo.list.Count; ++i)
+                    {
+                        var key = jo.keys[i];
+                        var val = jo.list[i].str;
+                        _CachedPlaceHolderMD5[key] = val;
+                    }
+                }
+                catch { }
+            }
+
             _CachedSpriteReplacement.Clear();
             _CachedSpritePlaceHolder.Clear();
             _CachedDistributeFlags.Clear();
@@ -175,6 +204,7 @@ namespace Capstones.UnityEditorEx
         }
         private static void SaveCachedSpriteReplacement()
         {
+            SaveCachedPlaceHolderMD5();
             var jo = new JSONObject(JSONObject.Type.OBJECT);
             var phs = new JSONObject(JSONObject.Type.OBJECT);
             jo["phsprites"] = phs;
@@ -191,6 +221,25 @@ namespace Capstones.UnityEditorEx
             using (var sw = PlatDependant.OpenWriteText("EditorOutput/Runtime/phsprite.txt"))
             {
                 sw.Write(jo.ToString(true));
+            }
+        }
+        private static void SaveCachedPlaceHolderMD5()
+        {
+            if (_CachedPlaceHolderMD5.Count > 0)
+            {
+                var jo = new JSONObject(JSONObject.Type.OBJECT);
+                foreach (var kvp in _CachedPlaceHolderMD5)
+                {
+                    jo[kvp.Key] = JSONObject.CreateStringObject(kvp.Value);
+                }
+                using (var sw = PlatDependant.OpenWriteText("EditorOutput/Runtime/phspritemd5.txt"))
+                {
+                    sw.Write(jo.ToString(true));
+                }
+            }
+            else
+            {
+                PlatDependant.DeleteFile("EditorOutput/Runtime/phspritemd5.txt");
             }
         }
         private static void CacheAllSpriteReplacement()
@@ -210,6 +259,64 @@ namespace Capstones.UnityEditorEx
                 }
             }
         }
+        [MenuItem("Res/Check Replaceable Sprite Updated", priority = 202000)]
+        public static void CheckUpdatedPHSpriteSource()
+        {
+            foreach (var kvp in _CachedSpriteReplacement)
+            {
+                CheckUpdatedPHSpriteSource(kvp.Key);
+            }
+        }
+        private static void CheckUpdatedPHSpriteSource(string phasset)
+        {
+            var source = System.IO.Path.GetDirectoryName(phasset) + "/." + System.IO.Path.GetFileName(phasset);
+            if (PlatDependant.IsFileExist(source))
+            {
+                var md5 = CapsEditorUtils.GetFileMD5(source) + "-" + CapsEditorUtils.GetFileLength(source);
+                var descpath = phasset + ".phs.asset";
+                RecordPHSpriteSourceMD5(descpath, md5);
+
+                string rep;
+                if (_CachedSpriteReplacement.TryGetValue(phasset, out rep) && rep == phasset)
+                {
+                    var oldmd5 = CapsEditorUtils.GetFileMD5(phasset) + "-" + CapsEditorUtils.GetFileLength(phasset);
+                    if (oldmd5 != md5)
+                    {
+                        PlatDependant.CopyFile(source, phasset);
+                        AssetDatabase.ImportAsset(phasset, ImportAssetOptions.ForceUpdate);
+                    }
+                }
+            }
+        }
+        private static void RecordPHSpriteSourceMD5(string descpath, string md5)
+        {
+            CapsPHSpriteDesc desc = null;
+            if (!PlatDependant.IsFileExist(descpath) || (desc = AssetDatabase.LoadAssetAtPath<CapsPHSpriteDesc>(descpath)) == null)
+            {
+                desc = ScriptableObject.CreateInstance<CapsPHSpriteDesc>();
+                desc.PHAssetMD5 = md5;
+                AssetDatabase.CreateAsset(desc, descpath);
+            }
+            else
+            {
+                if (desc.PHAssetMD5 != md5)
+                {
+                    desc.PHAssetMD5 = md5;
+                    EditorUtility.SetDirty(desc);
+                    AssetDatabase.SaveAssets();
+                }
+            }
+        }
+        private static void CheckAndRecordPHSpriteSourceMD5(string phasset)
+        {
+            var source = System.IO.Path.GetDirectoryName(phasset) + "/." + System.IO.Path.GetFileName(phasset);
+            if (PlatDependant.IsFileExist(source))
+            {
+                var md5 = CapsEditorUtils.GetFileMD5(source) + "-" + CapsEditorUtils.GetFileLength(source);
+                var descpath = phasset + ".phs.asset";
+                RecordPHSpriteSourceMD5(descpath, md5);
+            }
+        }
 
         private static bool AddPHSprite(string descpath)
         {
@@ -224,6 +331,10 @@ namespace Capstones.UnityEditorEx
                     CheckSpriteReplacement(norm);
                     return true;
                 }
+                else
+                {
+                    CheckUpdatedPHSpriteSource(asset);
+                }
             }
             return false;
         }
@@ -235,6 +346,7 @@ namespace Capstones.UnityEditorEx
                 var norm = CapsResInfoEditor.GetAssetNormPath(asset);
                 _CachedSpritePlaceHolder.Remove(norm);
                 _CachedSpriteReplacement.Remove(asset);
+                _CachedPlaceHolderMD5.Remove(asset);
             }
         }
         private static void DeletePHSprite(string descpath)
@@ -302,8 +414,13 @@ namespace Capstones.UnityEditorEx
                 {
                     real = phasset;
                 }
-                if (_CachedSpriteReplacement[phasset] != real || !PlatDependant.IsFileExist(phasset))
+                bool phassetexist;
+                if (!(phassetexist = PlatDependant.IsFileExist(phasset)) || _CachedSpriteReplacement[phasset] != real)
                 {
+                    if (!phassetexist)
+                    {
+                        CheckAndRecordPHSpriteSourceMD5(phasset);
+                    }
                     _CachedSpriteReplacement[phasset] = real;
                     var phmeta = phasset + ".meta";
                     if (!PlatDependant.IsFileExist(phmeta))
@@ -328,6 +445,41 @@ namespace Capstones.UnityEditorEx
                 }
             }
             return false;
+        }
+        private static void CheckPHSpriteDiffFromSource(string phasset)
+        {
+            if (_CachedSpriteReplacement.ContainsKey(phasset))
+            {
+                var phmd5 = CapsEditorUtils.GetFileMD5(phasset) + "-" + CapsEditorUtils.GetFileLength(phasset);
+                if (!_CachedPlaceHolderMD5.ContainsKey(phasset) || _CachedPlaceHolderMD5[phasset] != phmd5)
+                {
+                    _CachedPlaceHolderMD5[phasset] = phmd5;
+                    SaveCachedPlaceHolderMD5();
+                    var source = System.IO.Path.GetDirectoryName(phasset) + "/." + System.IO.Path.GetFileName(phasset);
+                    if (PlatDependant.IsFileExist(source))
+                    {
+                        var srcmd5 = CapsEditorUtils.GetFileMD5(source) + "-" + CapsEditorUtils.GetFileLength(source);
+                        if (phmd5 == srcmd5)
+                        {
+                            return;
+                        }
+                    }
+                    var target = _CachedSpriteReplacement[phasset];
+                    if (target != phasset && !string.IsNullOrEmpty(target) && PlatDependant.IsFileExist(target))
+                    {
+                        var tarmd5 = CapsEditorUtils.GetFileMD5(target) + "-" + CapsEditorUtils.GetFileLength(target);
+                        if (phmd5 == tarmd5)
+                        {
+                            return;
+                        }
+                    }
+
+                    PlatDependant.CopyFile(phasset, source);
+                    RecordPHSpriteSourceMD5(phasset + ".phs.asset", phmd5);
+                    _CachedSpriteReplacement[phasset] = phasset;
+                    CheckSpriteReplacement(CapsResInfoEditor.GetAssetNormPath(phasset));
+                }
+            }
         }
 
         internal static void RestoreAllReplacement()
@@ -463,6 +615,10 @@ namespace Capstones.UnityEditorEx
                                 {
                                     dirty |= CheckSpriteReplacement(norm);
                                 }
+                                else
+                                {
+                                    CheckPHSpriteDiffFromSource(asset);
+                                }
                             }
                         }
                     }
@@ -504,6 +660,10 @@ namespace Capstones.UnityEditorEx
                                 if (!_CachedSpriteReplacement.ContainsKey(asset))
                                 {
                                     dirty |= CheckSpriteReplacement(norm);
+                                }
+                                else
+                                {
+                                    CheckPHSpriteDiffFromSource(asset);
                                 }
                             }
                         }
