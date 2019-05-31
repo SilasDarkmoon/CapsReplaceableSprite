@@ -71,7 +71,7 @@ namespace Capstones.UnityEngineEx
                 return sbbundle.ToString();
             }
 
-            public bool LoadAssetBundle(string mod, string name, out ResManager.AssetBundleInfo bi)
+            public bool LoadAssetBundle(string mod, string name, bool isContainingBundle, out ResManager.AssetBundleInfo bi)
             {
                 bi = null;
                 if (name.StartsWith("v-"))
