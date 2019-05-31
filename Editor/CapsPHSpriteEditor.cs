@@ -259,6 +259,12 @@ namespace Capstones.UnityEditorEx
                 }
             }
         }
+
+        /// <summary>
+        /// we moved the place holder XXX.png to .XXX.png, which will not monitored by unity editor.
+        /// So we need store the md5 of .XXX.png to desc file.
+        /// when we push the changed desc file to git repository, other developers could know the .XXX.png was changed in unity editor
+        /// </summary>
         [MenuItem("Res/Check Replaceable Sprite Updated", priority = 202000)]
         public static void CheckUpdatedPHSpriteSource()
         {
@@ -267,6 +273,11 @@ namespace Capstones.UnityEditorEx
                 CheckUpdatedPHSpriteSource(kvp.Key);
             }
         }
+        /// <summary>
+        /// we moved the place holder XXX.png to .XXX.png, which will not monitored by unity editor.
+        /// So we need store the md5 of .XXX.png to desc file.
+        /// when we push the changed desc file to git repository, other developers could know the .XXX.png was changed in unity editor
+        /// </summary>
         private static void CheckUpdatedPHSpriteSource(string phasset)
         {
             var source = System.IO.Path.GetDirectoryName(phasset) + "/." + System.IO.Path.GetFileName(phasset);
@@ -446,7 +457,13 @@ namespace Capstones.UnityEditorEx
             }
             return false;
         }
-        private static void CheckPHSpriteDiffFromSource(string phasset)
+        /// <summary>
+        /// the placeholder.png can be reimported in 3 conditions:
+        /// 1) AssetDatabase.ImportAsset(...., ForceUpdate) or user do an reimport in asset context menu. this is filtered by _CachedPlaceHolderMD5. (the content of the asset have not actually changed).
+        /// 2) We replaced the placeholder with some other image in selected mod / dist. this is filtered by comparing placeholder's md5 with target's md5.
+        /// 3) We edit the placeholder.png outside unity editor or we copy new file to overwrite it in Explorer/Finder. This mean we want to change the original placeholder.png's content. So we need to copy it to .placeholder.png
+        /// </summary>
+        private static void CheckPHSpriteChangedOutsideEditor(string phasset)
         {
             if (_CachedSpriteReplacement.ContainsKey(phasset))
             {
@@ -617,7 +634,7 @@ namespace Capstones.UnityEditorEx
                                 }
                                 else
                                 {
-                                    CheckPHSpriteDiffFromSource(asset);
+                                    CheckPHSpriteChangedOutsideEditor(asset);
                                 }
                             }
                         }
@@ -663,7 +680,7 @@ namespace Capstones.UnityEditorEx
                                 }
                                 else
                                 {
-                                    CheckPHSpriteDiffFromSource(asset);
+                                    CheckPHSpriteChangedOutsideEditor(asset);
                                 }
                             }
                         }
