@@ -10,13 +10,16 @@ namespace Capstones.UnityEditorEx
 {
     public class CapsPHSpriteResBuilder : CapsResBuilder.IResBuilderEx
     {
-        public void Prepare()
+        public void Prepare(string output)
         {
             CapsPHSpriteEditor.RestoreAllReplacement();
         }
         public void Cleanup()
         {
             CapsPHSpriteEditor.RemakeAllReplacement();
+        }
+        public void OnSuccess()
+        {
         }
 
         private class BuildingItemInfo
@@ -107,7 +110,7 @@ namespace Capstones.UnityEditorEx
             }
         }
 
-        public bool GenerateBuildWork(string bundleName, IList<string> assets, ref AssetBundleBuild work)
+        public void GenerateBuildWork(string bundleName, IList<string> assets, ref AssetBundleBuild abwork, CapsResBuilder.CapsResBuildWork modwork, int abindex)
         {
             if (bundleName.StartsWith("v-"))
             {
@@ -116,12 +119,10 @@ namespace Capstones.UnityEditorEx
                 {
                     var name = bundleName.Substring(0, split + ".ab".Length);
                     var variant = bundleName.Substring(split + ".ab.".Length);
-                    work.assetBundleName = name;
-                    work.assetBundleVariant = variant;
+                    abwork.assetBundleName = name;
+                    abwork.assetBundleVariant = variant;
                 }
-                return true;
             }
-            return false;
         }
     }
 
