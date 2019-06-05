@@ -68,7 +68,6 @@ namespace Capstones.UnityEditorEx
                 item.Type = CapsPHSpriteLoader.CapsResManifestItemType_Virtual;
                 item.BRef = null;
 
-                var node = item.Node;
                 var asset = _Building.Asset;
                 string rootpath = "Assets/CapsRes/";
                 bool inPackage = false;
