@@ -64,7 +64,7 @@ namespace Capstones.UnityEditorEx
                         }
 
                         var gitpath = System.IO.Path.GetDirectoryName(assetpath) + "/.gitignore";
-                        AddGitIgnore(gitpath, System.IO.Path.GetFileName(assetpath), System.IO.Path.GetFileName(assetpath) + ".meta");
+                        CapsEditorUtils.AddGitIgnore(gitpath, System.IO.Path.GetFileName(assetpath), System.IO.Path.GetFileName(assetpath) + ".meta");
 
                         CheckSpriteReplacement(norm);
                         SaveCachedSpriteReplacement();
@@ -378,7 +378,7 @@ namespace Capstones.UnityEditorEx
                     }
 
                     var gitpath = System.IO.Path.GetDirectoryName(asset) + "/.gitignore";
-                    RemoveGitIgnore(gitpath, System.IO.Path.GetFileName(asset), System.IO.Path.GetFileName(asset) + ".meta");
+                    CapsEditorUtils.RemoveGitIgnore(gitpath, System.IO.Path.GetFileName(asset), System.IO.Path.GetFileName(asset) + ".meta");
 
                     AssetDatabase.ImportAsset(asset, ImportAssetOptions.ForceUpdate);
                 }
@@ -522,89 +522,6 @@ namespace Capstones.UnityEditorEx
                 {
                     PlatDependant.CopyFile(source, phasset);
                     AssetDatabase.ImportAsset(phasset, ImportAssetOptions.ForceUpdate);
-                }
-            }
-        }
-
-        private static void AddGitIgnore(string gitignorepath, params string[] items)
-        {
-            List<string> lines = new List<string>();
-            HashSet<string> lineset = new HashSet<string>();
-            if (PlatDependant.IsFileExist(gitignorepath))
-            {
-                try
-                {
-                    using (var sr = PlatDependant.OpenReadText(gitignorepath))
-                    {
-                        string line;
-                        while ((line = sr.ReadLine()) != null)
-                        {
-                            lines.Add(line);
-                            lineset.Add(line);
-                        }
-                    }
-                }
-                catch { }
-            }
-
-            if (items != null)
-            {
-                for (int i = 0; i < items.Length; ++i)
-                {
-                    var item = items[i];
-                    if (lineset.Add(item))
-                    {
-                        lines.Add(item);
-                    }
-                }
-            }
-
-            using (var sw = PlatDependant.OpenWriteText(gitignorepath))
-            {
-                for (int i = 0; i < lines.Count; ++i)
-                {
-                    sw.WriteLine(lines[i]);
-                }
-            }
-        }
-        private static void RemoveGitIgnore(string gitignorepath, params string[] items)
-        {
-            List<string> lines = new List<string>();
-            HashSet<string> removes = new HashSet<string>();
-            if (items != null)
-            {
-                removes.UnionWith(items);
-            }
-            if (PlatDependant.IsFileExist(gitignorepath))
-            {
-                try
-                {
-                    using (var sr = PlatDependant.OpenReadText(gitignorepath))
-                    {
-                        string line;
-                        while ((line = sr.ReadLine()) != null)
-                        {
-                            if (!removes.Contains(line))
-                            {
-                                lines.Add(line);
-                            }
-                        }
-                    }
-                }
-                catch { }
-            }
-            if (lines.Count == 0)
-            {
-                PlatDependant.DeleteFile(gitignorepath);
-            }
-            else
-            {
-                using (var sw = PlatDependant.OpenWriteText(gitignorepath))
-                {
-                    for (int i = 0; i < lines.Count; ++i)
-                    {
-                        sw.WriteLine(lines[i]);
-                    }
                 }
             }
         }
