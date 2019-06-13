@@ -100,7 +100,7 @@ namespace Capstones.UnityEditorEx
                     rootpath = rootpath + "dist/" + dist + "/virtual/";
                 }
 
-                var newpath = rootpath + _Building.Bundle;
+                var newpath = rootpath + _Building.Bundle.ToLower();
                 CapsResManifestNode newnode = item.Manifest.AddOrGetItem(newpath);
                 var newitem = new CapsResManifestItem(newnode);
                 newitem.Type = (int)CapsResManifestItemType.Redirect;
