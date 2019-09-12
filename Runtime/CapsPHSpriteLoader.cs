@@ -9,18 +9,6 @@ using Object = UnityEngine.Object;
 
 namespace Capstones.UnityEngineEx
 {
-    public enum CapsResManifestItemType_
-    {
-        None = 0,
-        Normal = 1,
-        Prefab = 2,
-        Scene = 3,
-        Redirect = 4,
-        //PackedTex = 5,
-        //DynTex = 6,
-        //DynSprite = 7,
-    }
-
     public static class CapsPHSpriteLoader
     {
         public const int CapsResManifestItemType_Virtual = 11;
