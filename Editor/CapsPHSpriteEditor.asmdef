@@ -6,7 +6,8 @@
         "ResManagerEditor",
         "JsonObject",
         "ResManagerEditorEntry",
-        "ResManagerEntry"
+        "ResManagerEntry",
+        "ResManagerEditor.ResBuilder"
     ],
     "includePlatforms": [
         "Editor"
