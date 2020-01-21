@@ -13,12 +13,11 @@ namespace Capstones.UnityEngineEx
     {
         public const int CapsResManifestItemType_Virtual = 11;
 
-        public class TypedResLoader_Virtual : ResManager.ClientResLoader.TypedResLoader_Normal, ResManager.IAssetBundleLoaderEx
+        public class AssetInfo_Virtual : ResManager.ClientResLoader.AssetInfo_Normal
         {
-            public override int ResItemType { get { return CapsResManifestItemType_Virtual; } }
-
-            public override string FormatBundleNameFor(CapsResManifestItem item)
+            public override string FormatBundleName()
             {
+                var item = ManiItem;
                 var node = item.Node;
                 var depth = node.GetDepth();
                 string[] parts = new string[depth];
@@ -57,6 +56,16 @@ namespace Capstones.UnityEngineEx
                 sbbundle.Append(assetName.ToLower());
                 sbbundle.Append(".ab");
                 return sbbundle.ToString();
+            }
+        }
+
+        public class TypedResLoader_Virtual : ResManager.ClientResLoader.TypedResLoader_Normal, ResManager.IAssetBundleLoaderEx
+        {
+            public override int ResItemType { get { return CapsResManifestItemType_Virtual; } }
+
+            protected override ResManager.ClientResLoader.AssetInfo_Base CreateAssetInfoRaw(CapsResManifestItem item)
+            {
+                return new AssetInfo_Virtual() { ManiItem = item };
             }
 
             public bool LoadAssetBundle(string mod, string name, bool isContainingBundle, out ResManager.AssetBundleInfo bi)
