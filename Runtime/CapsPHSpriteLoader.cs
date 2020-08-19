@@ -106,9 +106,6 @@ namespace Capstones.UnityEngineEx
                 }
                 return false;
             }
-
-            public void PreUnloadUnusedRes() { }
-            public void PostUnloadUnusedRes() { }
         }
         public static readonly TypedResLoader_Virtual __TypedResLoader_Virtual = new TypedResLoader_Virtual();
 
