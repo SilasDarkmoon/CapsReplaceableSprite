@@ -39,7 +39,7 @@ namespace Capstones.UnityEditorEx
             {
                 System.Text.StringBuilder sbbundle = new System.Text.StringBuilder();
                 sbbundle.Append("v-");
-                sbbundle.Append(norm);
+                sbbundle.Append(norm.ToLower());
                 sbbundle.Replace('\\', '-');
                 sbbundle.Replace('/', '-');
                 sbbundle.Append(".ab");
@@ -50,7 +50,7 @@ namespace Capstones.UnityEditorEx
                     Dist = dist,
                     Norm = norm,
                     Bundle = sbbundle.ToString(),
-                    Variant = "m-" + (mod ?? "") + "-d-" + (dist ?? ""),
+                    Variant = "m-" + (mod ?? "").ToLower() + "-d-" + (dist ?? "").ToLower(),
                 };
                 return _Building.Bundle + "." + _Building.Variant;
             }
