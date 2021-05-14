@@ -26,6 +26,16 @@ namespace Capstones.UnityEditorEx
             CapsDistributeEditor.OnDistributeFlagsChanged += CheckDistributeFlagsAndSpriteReplacement;
         }
 
+        private static void AddGitIgnore(string assetpath)
+        {
+            var gitpath = System.IO.Path.GetDirectoryName(assetpath) + "/.gitignore";
+            CapsEditorUtils.AddGitIgnore(gitpath, System.IO.Path.GetFileName(assetpath), System.IO.Path.GetFileName(assetpath) + ".meta");
+        }
+        private static void RemoveGitIgnore(string assetpath)
+        {
+            var gitpath = System.IO.Path.GetDirectoryName(assetpath) + "/.gitignore";
+            CapsEditorUtils.RemoveGitIgnore(gitpath, System.IO.Path.GetFileName(assetpath), System.IO.Path.GetFileName(assetpath) + ".meta");
+        }
         public static void CreateReplaceableSprite(string assetpath)
         {
             var source = System.IO.Path.GetDirectoryName(assetpath) + "/." + System.IO.Path.GetFileName(assetpath);
@@ -36,7 +46,7 @@ namespace Capstones.UnityEditorEx
             else
             {
                 string type, mod, dist;
-                ResManager.GetAssetNormPath(assetpath, out type, out mod, out dist);
+                var norm = ResManager.GetAssetNormPath(assetpath, out type, out mod, out dist);
                 if (type != "res")
                 {
                     Debug.LogError("Can only create replaceable sprite in CapsRes folder. Current: " + assetpath);
@@ -49,13 +59,13 @@ namespace Capstones.UnityEditorEx
                     }
                     else
                     {
-                        var norm = CapsResInfoEditor.GetAssetNormPath(assetpath);
+                        //var norm = CapsResInfoEditor.GetAssetNormPath(assetpath);
                         _CachedSpritePlaceHolder[norm] = assetpath;
                         _CachedSpriteReplacement[assetpath] = assetpath;
 
                         var desc = ScriptableObject.CreateInstance<CapsPHSpriteDesc>();
                         desc.PHAssetMD5 = CapsEditorUtils.GetFileMD5(assetpath) + "-" + CapsEditorUtils.GetFileLength(assetpath);
-                        AssetDatabase.CreateAsset(desc, assetpath + ".phs.asset");
+                        AssetDatabaseUtils.CreateAssetSafe(desc, assetpath + ".phs.asset");
                         PlatDependant.CopyFile(assetpath, source);
                         var meta = assetpath + ".meta";
                         if (PlatDependant.IsFileExist(meta))
@@ -63,8 +73,7 @@ namespace Capstones.UnityEditorEx
                             PlatDependant.CopyFile(meta, meta + ".~");
                         }
 
-                        var gitpath = System.IO.Path.GetDirectoryName(assetpath) + "/.gitignore";
-                        CapsEditorUtils.AddGitIgnore(gitpath, System.IO.Path.GetFileName(assetpath), System.IO.Path.GetFileName(assetpath) + ".meta");
+                        AddGitIgnore(assetpath);
 
                         CheckSpriteReplacement(norm);
                         SaveCachedSpriteReplacement();
@@ -294,7 +303,7 @@ namespace Capstones.UnityEditorEx
                     if (oldmd5 != md5)
                     {
                         PlatDependant.CopyFile(source, phasset);
-                        AssetDatabase.ImportAsset(phasset, ImportAssetOptions.ForceUpdate);
+                        AssetDatabaseUtils.ForceImportAssetSafe(phasset);
                     }
                 }
             }
@@ -306,7 +315,7 @@ namespace Capstones.UnityEditorEx
             {
                 desc = ScriptableObject.CreateInstance<CapsPHSpriteDesc>();
                 desc.PHAssetMD5 = md5;
-                AssetDatabase.CreateAsset(desc, descpath);
+                AssetDatabaseUtils.CreateAssetSafe(desc, descpath);
             }
             else
             {
@@ -314,7 +323,7 @@ namespace Capstones.UnityEditorEx
                 {
                     desc.PHAssetMD5 = md5;
                     EditorUtility.SetDirty(desc);
-                    AssetDatabase.SaveAssets();
+                    AssetDatabaseUtils.SaveChangedAssetsSafe();
                 }
             }
         }
@@ -377,10 +386,8 @@ namespace Capstones.UnityEditorEx
                         PlatDependant.MoveFile(phmetasrc, asset + ".meta");
                     }
 
-                    var gitpath = System.IO.Path.GetDirectoryName(asset) + "/.gitignore";
-                    CapsEditorUtils.RemoveGitIgnore(gitpath, System.IO.Path.GetFileName(asset), System.IO.Path.GetFileName(asset) + ".meta");
-
-                    AssetDatabase.ImportAsset(asset, ImportAssetOptions.ForceUpdate);
+                    RemoveGitIgnore(asset);
+                    AssetDatabaseUtils.ForceImportAssetSafe(asset);
                 }
             }
         }
@@ -451,7 +458,7 @@ namespace Capstones.UnityEditorEx
                     {
                         PlatDependant.CopyFile(real, phasset);
                     }
-                    AssetDatabase.ImportAsset(phasset, ImportAssetOptions.ForceUpdate);
+                    AssetDatabaseUtils.ForceImportAssetSafe(phasset);
                     return true;
                 }
             }
@@ -508,7 +515,7 @@ namespace Capstones.UnityEditorEx
                 if (PlatDependant.IsFileExist(source))
                 {
                     PlatDependant.CopyFile(source, phasset);
-                    AssetDatabase.ImportAsset(phasset, ImportAssetOptions.ForceUpdate);
+                    AssetDatabaseUtils.ForceImportAssetSafe(phasset);
                 }
             }
         }
@@ -521,7 +528,7 @@ namespace Capstones.UnityEditorEx
                 if (PlatDependant.IsFileExist(source))
                 {
                     PlatDependant.CopyFile(source, phasset);
-                    AssetDatabase.ImportAsset(phasset, ImportAssetOptions.ForceUpdate);
+                    AssetDatabaseUtils.ForceImportAssetSafe(phasset);
                 }
             }
         }
@@ -530,94 +537,76 @@ namespace Capstones.UnityEditorEx
         {
             private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
             {
-                bool dirty = false;
+                HashSet<string> added = new HashSet<string>();
+                HashSet<string> deleted = new HashSet<string>();
                 if (importedAssets != null)
                 {
-                    for (int i = 0; i < importedAssets.Length; ++i)
-                    {
-                        var asset = importedAssets[i];
-                        if (asset.EndsWith(".phs.asset"))
-                        {
-                            dirty |= AddPHSprite(asset);
-                        }
-                        else //if (AssetImporter.GetAtPath(asset) is TextureImporter)
-                        {
-                            var norm = CapsResInfoEditor.GetAssetNormPath(asset);
-                            if (_CachedSpritePlaceHolder.ContainsKey(norm))
-                            {
-                                if (!_CachedSpriteReplacement.ContainsKey(asset))
-                                {
-                                    dirty |= CheckSpriteReplacement(norm);
-                                }
-                                else
-                                {
-                                    CheckPHSpriteChangedOutsideEditor(asset);
-                                }
-                            }
-                        }
-                    }
+                    added.UnionWith(importedAssets);
                 }
                 if (deletedAssets != null)
                 {
-                    for (int i = 0; i < deletedAssets.Length; ++i)
-                    {
-                        var asset = deletedAssets[i];
-                        if (asset.EndsWith(".phs.asset"))
-                        {
-                            dirty = true;
-                            DeletePHSprite(asset);
-                        }
-                        else
-                        {
-                            var norm = CapsResInfoEditor.GetAssetNormPath(asset);
-                            if (_CachedSpritePlaceHolder.ContainsKey(norm))
-                            {
-                                dirty |= CheckSpriteReplacement(norm);
-                            }
-                        }
-                    }
+                    deleted.UnionWith(deletedAssets);
                 }
                 if (movedAssets != null)
                 {
-                    for (int i = 0; i < movedAssets.Length; ++i)
+                    added.UnionWith(movedAssets);
+                }
+                if (movedFromAssetPaths != null)
+                {
+                    deleted.UnionWith(movedFromAssetPaths);
+                }
+
+                bool dirty = false;
+                foreach (var asset in added)
+                {
+                    if (asset.EndsWith(".phs.asset"))
                     {
-                        var asset = movedAssets[i];
-                        if (asset.EndsWith(".phs.asset"))
+                        dirty |= AddPHSprite(asset);
+                        var phasset = asset.Substring(0, asset.Length - ".phs.asset".Length);
+                        AddGitIgnore(phasset);
+                    }
+                    else //if (AssetImporter.GetAtPath(asset) is TextureImporter)
+                    {
+                        var norm = CapsResInfoEditor.GetAssetNormPath(asset);
+                        if (_CachedSpritePlaceHolder.ContainsKey(norm))
                         {
-                            dirty |= AddPHSprite(asset);
-                        }
-                        else //if (AssetImporter.GetAtPath(asset) is TextureImporter)
-                        {
-                            var norm = CapsResInfoEditor.GetAssetNormPath(asset);
-                            if (_CachedSpritePlaceHolder.ContainsKey(norm))
-                            {
-                                if (!_CachedSpriteReplacement.ContainsKey(asset))
-                                {
-                                    dirty |= CheckSpriteReplacement(norm);
-                                }
-                                else
-                                {
+                            if (!_CachedSpriteReplacement.ContainsKey(asset))
+                            { // the dist image.
+                                dirty |= CheckSpriteReplacement(norm);
+                            }
+                            else
+                            { // the ph image.
+                                var phdesc = asset + ".phs.asset";
+                                if (!deleted.Contains(phdesc)) // from git. the ph-sprite is changed to normal sprite.
+                                { // we want to change to content of the ph-sprite, we need to sync it to the backup.
                                     CheckPHSpriteChangedOutsideEditor(asset);
                                 }
                             }
                         }
                     }
                 }
-                if (movedFromAssetPaths != null)
+                foreach (var asset in deleted)
                 {
-                    for (int i = 0; i < movedFromAssetPaths.Length; ++i)
+                    if (asset.EndsWith(".phs.asset"))
                     {
-                        var asset = movedFromAssetPaths[i];
-                        if (asset.EndsWith(".phs.asset"))
-                        {
-                            dirty = true;
-                            DeletePHSprite(asset);
+                        dirty = true;
+                        DeletePHSprite(asset); // restore ph sprite to normal sprite.
+                        var phasset = asset.Substring(0, asset.Length - ".phs.asset".Length);
+                        if (deleted.Contains(phasset))
+                        { // we deleted ph-desc and ph-image, in Editor. the backup of the ph-image is still there. we need to delete all.
+                            PlatDependant.DeleteFile(phasset);
                         }
-                        else
+                        RemoveGitIgnore(phasset);
+                    }
+                    else
+                    {
+                        var norm = CapsResInfoEditor.GetAssetNormPath(asset);
+                        if (_CachedSpritePlaceHolder.ContainsKey(norm))
                         {
-                            var norm = CapsResInfoEditor.GetAssetNormPath(asset);
-                            if (_CachedSpritePlaceHolder.ContainsKey(norm))
-                            {
+                            var phasset = _CachedSpritePlaceHolder[norm];
+                            var phdesc = phasset + ".phs.asset";
+                            if (!deleted.Contains(phdesc)) // which means we made a full delete.
+                            { // check if the dist sprite is changed and will we make a sync
                                 dirty |= CheckSpriteReplacement(norm);
                             }
                         }
