@@ -8,18 +8,18 @@ using Capstones.UnityEngineEx;
 
 namespace Capstones.UnityEditorEx
 {
-    public class CapsPHSpriteResBuilder : CapsResBuilder.IResBuilderEx
+    [InitializeOnLoad]
+    public class CapsPHSpriteResBuilder : CapsResBuilder.BaseResBuilderEx<CapsPHSpriteResBuilder>
     {
-        public void Prepare(string output)
+        private static HierarchicalInitializer _Initializer = new HierarchicalInitializer(0);
+        
+        public override void Prepare(string output)
         {
             CapsPHSpriteEditor.RestoreAllReplacement();
         }
-        public void Cleanup()
+        public override void Cleanup()
         {
             CapsPHSpriteEditor.RemakeAllReplacement();
-        }
-        public void OnSuccess()
-        {
         }
 
         private class BuildingItemInfo
@@ -32,7 +32,7 @@ namespace Capstones.UnityEditorEx
             public string Variant;
         }
         private BuildingItemInfo _Building;
-        public string FormatBundleName(string asset, string mod, string dist, string norm)
+        public override string FormatBundleName(string asset, string mod, string dist, string norm)
         {
             _Building = null;
             if (CapsPHSpriteEditor._CachedSpritePlaceHolder.ContainsKey(norm))
@@ -56,7 +56,7 @@ namespace Capstones.UnityEditorEx
             }
             return null;
         }
-        public bool CreateItem(CapsResManifestNode node)
+        public override bool CreateItem(CapsResManifestNode node)
         {
             if (_Building != null)
             {
@@ -64,7 +64,7 @@ namespace Capstones.UnityEditorEx
             }
             return false;
         }
-        public void ModifyItem(CapsResManifestItem item)
+        public override void ModifyItem(CapsResManifestItem item)
         {
             if (_Building != null)
             {
@@ -110,7 +110,7 @@ namespace Capstones.UnityEditorEx
             }
         }
 
-        public void GenerateBuildWork(string bundleName, IList<string> assets, ref AssetBundleBuild abwork, CapsResBuilder.CapsResBuildWork modwork, int abindex)
+        public override void GenerateBuildWork(string bundleName, IList<string> assets, ref AssetBundleBuild abwork, CapsResBuilder.CapsResBuildWork modwork, int abindex)
         {
             if (bundleName.StartsWith("v-"))
             {
@@ -123,16 +123,6 @@ namespace Capstones.UnityEditorEx
                     abwork.assetBundleVariant = variant;
                 }
             }
-        }
-    }
-
-    [InitializeOnLoad]
-    public static class CapsPHSpriteResBuilderEntry
-    {
-        private static CapsPHSpriteResBuilder _Builder = new CapsPHSpriteResBuilder();
-        static CapsPHSpriteResBuilderEntry()
-        {
-            CapsResBuilder.ResBuilderEx.Add(_Builder);
         }
     }
 }
