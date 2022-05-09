@@ -68,7 +68,7 @@ namespace Capstones.UnityEngineEx
                 return new AssetInfo_Virtual() { ManiItem = item };
             }
 
-            public bool LoadAssetBundle(string mod, string name, bool isContainingBundle, out ResManager.AssetBundleInfo bi)
+            public bool LoadAssetBundle(string mod, string name, bool asyncLoad, bool isContainingBundle, out ResManager.AssetBundleInfo bi)
             {
                 bi = null;
                 if (name.StartsWith("v-"))
@@ -99,7 +99,7 @@ namespace Capstones.UnityEngineEx
                             {
                                 bmod = "";
                             }
-                            bi = ResManager.LoadAssetBundle(bmod, bnorm + ".m-" + (bopmod ?? "").ToLower() + "-d-" + (bitem.Manifest.DFlag ?? "").ToLower(), bnorm);
+                            bi = ResManager.LoadAssetBundle(bmod, bnorm + ".m-" + (bopmod ?? "").ToLower() + "-d-" + (bitem.Manifest.DFlag ?? "").ToLower(), bnorm, asyncLoad);
                         }
                     }
                     return true;
