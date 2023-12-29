@@ -9,7 +9,7 @@ using Capstones.UnityEngineEx;
 namespace Capstones.UnityEditorEx
 {
     [InitializeOnLoad]
-    public class CapsPHSpriteResBuilder : CapsResBuilder.BaseResBuilderEx<CapsPHSpriteResBuilder>
+    public class CapsPHSpriteResBuilder : CapsResBuilderAB.BaseResBuilderEx<CapsPHSpriteResBuilder>
     {
         private static HierarchicalInitializer _Initializer = new HierarchicalInitializer(0);
         
@@ -110,7 +110,7 @@ namespace Capstones.UnityEditorEx
             }
         }
 
-        public override void GenerateBuildWork(string bundleName, IList<string> assets, ref AssetBundleBuild abwork, CapsResBuilder.CapsResBuildWork modwork, int abindex)
+        public override void GenerateBuildWork(string bundleName, IList<string> assets, ref AssetBundleBuild abwork, CapsResBuilderAB.CapsResBuildWork modwork, int abindex)
         {
             if (bundleName.StartsWith("v-"))
             {

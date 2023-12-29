@@ -1,14 +1,17 @@
 {
     "name": "CapsPHSprite",
+    "rootNamespace": "",
     "references": [
-        "ResManager"
+        "ResManager",
+        "ResManagerAB"
     ],
-    "optionalUnityReferences": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": []
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

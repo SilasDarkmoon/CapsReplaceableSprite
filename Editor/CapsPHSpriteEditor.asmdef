@@ -1,5 +1,6 @@
 {
     "name": "CapsPHSpriteEditor",
+    "rootNamespace": "",
     "references": [
         "CapsPHSprite",
         "ResManager",
@@ -7,7 +8,9 @@
         "JsonObject",
         "ResManagerEditorEntry",
         "ResManagerEntry",
-        "ResManagerEditor.ResBuilder"
+        "ResManagerEditor.ResBuilder",
+        "ResManagerEditor.ResBuilderAB",
+        "CapsModsEditor"
     ],
     "includePlatforms": [
         "Editor"

@@ -13,7 +13,7 @@ namespace Capstones.UnityEngineEx
     {
         public const int CapsResManifestItemType_Virtual = 11;
 
-        public class AssetInfo_Virtual : ResManager.ClientResLoader.AssetInfo_Normal
+        public class AssetInfo_Virtual : ResManagerAB.ClientResLoader.AssetInfo_Normal
         {
             public override string FormatBundleName()
             {
@@ -59,16 +59,16 @@ namespace Capstones.UnityEngineEx
             }
         }
 
-        public class TypedResLoader_Virtual : ResManager.ClientResLoader.TypedResLoader_Normal, ResManager.IAssetBundleLoaderEx
+        public class TypedResLoader_Virtual : ResManagerAB.ClientResLoader.TypedResLoader_Normal, ResManagerAB.IAssetBundleLoaderEx
         {
             public override int ResItemType { get { return CapsResManifestItemType_Virtual; } }
 
-            protected override ResManager.ClientResLoader.AssetInfo_Base CreateAssetInfoRaw(CapsResManifestItem item)
+            protected override ResManagerAB.ClientResLoader.AssetInfo_Base CreateAssetInfoRaw(CapsResManifestItem item)
             {
                 return new AssetInfo_Virtual() { ManiItem = item };
             }
 
-            public bool LoadAssetBundle(string mod, string name, bool asyncLoad, bool isContainingBundle, out ResManager.AssetBundleInfo bi)
+            public bool LoadAssetBundle(string mod, string name, bool asyncLoad, bool isContainingBundle, out ResManagerAB.AssetBundleInfo bi)
             {
                 bi = null;
                 if (name.StartsWith("v-"))
@@ -80,7 +80,7 @@ namespace Capstones.UnityEngineEx
                     {
                         bnorm = name.Substring(0, split + ".ab".Length);
                     }
-                    if (ResManager.ClientResLoader.CollapsedManifest.TryGetItem("virtual/" + bnorm, out bnode))
+                    if (ResManagerAB.ClientResLoader.CollapsedManifest.TryGetItem("virtual/" + bnorm, out bnode))
                     {
                         CapsResManifestItem bitem = bnode.Item;
                         if (bitem != null)
@@ -99,7 +99,7 @@ namespace Capstones.UnityEngineEx
                             {
                                 bmod = "";
                             }
-                            bi = ResManager.LoadAssetBundle(bmod, bnorm + ".m-" + (bopmod ?? "").ToLower() + "-d-" + (bitem.Manifest.DFlag ?? "").ToLower(), bnorm, asyncLoad);
+                            bi = ResManagerAB.LoadAssetBundle(bmod, bnorm + ".m-" + (bopmod ?? "").ToLower() + "-d-" + (bitem.Manifest.DFlag ?? "").ToLower(), bnorm, asyncLoad);
                         }
                     }
                     return true;
@@ -112,7 +112,7 @@ namespace Capstones.UnityEngineEx
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void OnUnityStart()
         {
-            ResManager.AssetBundleLoaderEx.Add(__TypedResLoader_Virtual);
+            ResManagerAB.AssetBundleLoaderEx.Add(__TypedResLoader_Virtual);
         }
     }
 }
